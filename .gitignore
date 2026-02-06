@@ -1,0 +1,17 @@
+# Packer
+output-*/
+packer_cache/
+*.log
+crash.log
+
+# Temporary build files
+OVMF_VARS.fd
+
+# Large ISO files
+iso/*.iso
+
+# OS and Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
