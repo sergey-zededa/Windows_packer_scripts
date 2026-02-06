@@ -30,7 +30,8 @@ source "qemu" "windows11" {
   iso_url           = var.iso_url
   iso_checksum      = var.iso_checksum
   output_directory  = "output-windows11"
-  shutdown_command  = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\""
+  shutdown_command  = "powershell -executionpolicy bypass -c \"& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /shutdown /quiet\""
+  shutdown_timeout  = "1h"
   disk_size         = "65536"
   format            = "qcow2"
   accelerator       = "kvm"
@@ -78,6 +79,12 @@ source "qemu" "windows11" {
     ["-tpmdev", "emulator,id=tpm0,chardev=chrtpm"],
     ["-device", "tpm-tis,tpmdev=tpm0"],
     
+    # Network with Port Forwarding
+    # RDP: 0.0.0.0:3389 -> 3389
+    # WinRM: 0.0.0.0:{{ .SSHHostPort }} -> 5985 (This tells QEMU to use the port Packer selected)
+    ["-netdev", "user,id=user.0,hostfwd=tcp:0.0.0.0:3389-:3389,hostfwd=tcp:0.0.0.0:{{ .SSHHostPort }}-:5985"],
+    ["-device", "virtio-net,netdev=user.0"],
+
     # UEFI Firmware
     ["-drive", "if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd"],
     ["-drive", "if=pflash,format=raw,file=OVMF_VARS.fd"],
@@ -113,9 +120,6 @@ build {
   }
 
   provisioner "powershell" {
-    inline = [
-      "Write-Host 'Sysprepping...'",
-      "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /shutdown /quiet"
-    ]
+    script = "./scripts/optimize.ps1"
   }
 }

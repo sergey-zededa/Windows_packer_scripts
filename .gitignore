@@ -15,3 +15,4 @@ iso/*.iso
 .idea/
 .vscode/
 *.swp
+windows11-compressed.qcow2
