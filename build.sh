@@ -10,8 +10,31 @@ sleep 1
 cp /usr/share/OVMF/OVMF_VARS_4M.fd ./OVMF_VARS.fd
 chmod 666 ./OVMF_VARS.fd
 
-# Run Packer
-env PACKER_LOG=1 packer build windows11-qemu.pkr.hcl
+# Run Packer in background
+# Use -on-error=abort to keep artifacts on failure
+echo "Starting Packer..."
+env PACKER_LOG=1 packer build -on-error=abort windows11-qemu.pkr.hcl > packer.log 2>&1 &
+PACKER_PID=$!
+
+echo "Packer started with PID $PACKER_PID. Monitoring logs..."
+
+# Monitoring Loop
+SYSPRP_STARTED=0
+while kill -0 $PACKER_PID 2>/dev/null; do
+    if [ $SYSPRP_STARTED -eq 0 ]; then
+        if grep -q "Starting Sysprep" packer.log; then
+            echo "Sysprep detected! Starting log dump loop..."
+            SYSPRP_STARTED=1
+        fi
+    else
+        # Try to dump logs every 60 seconds
+        python3 dump_logs.py
+        sleep 60
+    fi
+    sleep 5
+done
+
+wait $PACKER_PID
 PACKER_EXIT_CODE=$?
 
 # Cleanup
@@ -28,7 +51,8 @@ if [ $PACKER_EXIT_CODE -eq 0 ]; then
         echo "Error: Output image not found!"
     fi
 else
-    echo "Packer build failed. Skipping compression."
+    echo "Packer build failed (Exit Code: $PACKER_EXIT_CODE). Artifacts should be preserved in output-windows11/"
+    echo "Check sysprep_*.log files for diagnosis."
 fi
 
 exit $PACKER_EXIT_CODE

@@ -30,7 +30,8 @@ source "qemu" "windows11" {
   iso_url           = var.iso_url
   iso_checksum      = var.iso_checksum
   output_directory  = "output-windows11"
-  shutdown_command  = "powershell -executionpolicy bypass -c \"& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /shutdown /quiet\""
+  # Robust Shutdown: Run Sysprep /quit, Wait, then Force Stop
+  shutdown_command  = "powershell -executionpolicy bypass -File C:/Windows/Temp/sysprep-shutdown.ps1"
   shutdown_timeout  = "1h"
   disk_size         = "65536"
   format            = "qcow2"
@@ -107,7 +108,7 @@ build {
 
   provisioner "powershell" {
     inline = [
-      "Write-Host 'VirtIO Drivers check skipped (already installed).'"
+      "Write-Host 'VirtIO Drivers check skipped (already installed).'\""
     ]
   }
 
@@ -121,5 +122,15 @@ build {
 
   provisioner "powershell" {
     script = "./scripts/optimize.ps1"
+  }
+
+  provisioner "file" {
+    source      = "scripts/sysprep-shutdown.ps1"
+    destination = "C:/Windows/Temp/sysprep-shutdown.ps1"
+  }
+
+  # Reboot to clear file locks before Sysprep
+  provisioner "windows-restart" {
+    restart_timeout = "30m"
   }
 }

@@ -25,6 +25,12 @@ Stop-Service -Name iphlpsvc -Force
 Set-Service -Name iphlpsvc -StartupType Disabled
 reg delete "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\iphlpsvc\Parameters\ProxyMgr" /f
 
+Write-Host "Deleting Recovery Partition to allow Volume Expansion..."
+reagentc /disable
+# Wait a moment for reagentc to release locks
+Start-Sleep -Seconds 5
+Get-Partition | Where-Object Type -eq "Recovery" | Remove-Partition -Confirm:$false
+
 Write-Host "Cleaning up Component Store..."
 Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
 
@@ -35,16 +41,7 @@ Get-ChildItem $cleanmgrRegPath | ForEach-Object {
 }
 Start-Process -FilePath cleanmgr.exe -ArgumentList "/sagerun:1" -Wait
 
-Write-Host "Zeroing out free space (this may take a while)..."
-$filePath = "C:\zero.tmp"
-$volume = Get-Volume -DriveLetter C
-$size = ($volume.SizeRemaining) - 100MB
-if ($size -gt 0) {
-    fsutil file createnew $filePath $size
-    Remove-Item $filePath -Force
-}
-
-Write-Host "Optimizing Volume..."
+Write-Host "Trimming Volume..."
 Optimize-Volume -DriveLetter C -ReTrim -Verbose
 
 Write-Host "Optimization Complete."
