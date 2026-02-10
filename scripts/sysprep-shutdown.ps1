@@ -30,7 +30,7 @@ if ($sw.Elapsed.TotalMinutes -ge 15) {
 # Run Sysprep
 Write-Host "sysprep-shutdown.ps1: Launching Sysprep..."
 $sysprepPath = Join-Path $env:SystemRoot "System32\Sysprep\Sysprep.exe"
-$sysprepArgs = "/oobe /generalize /quit "
+$sysprepArgs = "/oobe /generalize /quit /unattend:C:\\Windows\\Temp\\unattend.xml"
 $p = Start-Process -FilePath $sysprepPath -ArgumentList $sysprepArgs -PassThru -NoNewWindow
 Wait-Process -Id $p.Id
 

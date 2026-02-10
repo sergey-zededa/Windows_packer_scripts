@@ -129,6 +129,11 @@ build {
     destination = "C:/Windows/Temp/sysprep-shutdown.ps1"
   }
 
+  provisioner "file" {
+    source      = "scripts/unattend.xml"
+    destination = "C:/Windows/Temp/unattend.xml"
+  }
+
   # Reboot to clear file locks before Sysprep
   provisioner "windows-restart" {
     restart_timeout = "30m"

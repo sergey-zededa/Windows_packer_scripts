@@ -40,3 +40,8 @@ Automated Windows 11 image creation with:
 
 - **Sysprep Hangs**: The `iphlpsvc` service is known to cause hangs during the generalization phase. The `scripts/sysprep-shutdown.ps1` script explicitly stops this service and cleans up its registry keys to prevent this.
 - **VNC**: You can connect to VNC on port `5900` (or as assigned) to monitor the installation process. The Sysprep window is visible (not hidden) to aid in debugging.
+
+## OOBE Bypass
+To bypass Windows 11 OOBE (Microsoft Account requirement), a custom `unattend.xml` is used during the final Sysprep generalization.
+- **`scripts/unattend.xml`**: Configures OOBE to be skipped and sets `BypassNRO` registry key.
+- **`scripts/sysprep-shutdown.ps1`**: Applies this unattend file via `Sysprep /unattend:...`.
