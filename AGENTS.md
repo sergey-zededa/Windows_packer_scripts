@@ -40,7 +40,7 @@ The manual process typically involves:
 
 ## Implementation Status
 *   **VirtIO**: Handled by `virtio-win.iso` and driver installation scripts.
-*   **Cloudbase-Init**: Installed via `scripts/install-agent.ps1` (downloads from GitHub).
+*   **Cloudbase-Init**: Installed via `scripts/install-agent.ps1` (Stable x64). Configuration enforced without BOM, includes SetUserPasswordPlugin and LocalScriptsPlugin).
 *   **Updates**: `scripts/win-updates.ps1` (currently a placeholder, may need expansion to match the guide's requirement for full updates).
 *   **Sysprep**: Typically handled by Cloudbase-Init or the final shutdown command.
 

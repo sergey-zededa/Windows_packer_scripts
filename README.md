@@ -45,3 +45,11 @@ Automated Windows 11 image creation with:
 To bypass Windows 11 OOBE (Microsoft Account requirement), a custom `unattend.xml` is used during the final Sysprep generalization.
 - **`scripts/unattend.xml`**: Configures OOBE to be skipped and sets `BypassNRO` registry key.
 - **`scripts/sysprep-shutdown.ps1`**: Applies this unattend file via `Sysprep /unattend:...`.
+
+## Cloudbase-Init Configuration
+The image includes Cloudbase-Init for cloud initialization.
+- **Config**: `scripts/install-agent.ps1` generates `cloudbase-init.conf` with:
+    - **Plugins**: `CreateUserPlugin`, `SetUserPasswordPlugin`, `ExtendVolumesPlugin`, `LocalScriptsPlugin`.
+    - **Config Drive**: Enabled (`raw_hdd`, `cdrom`, `vfat`).
+    - **Service Startup**: Explicitly enforced to `Automatic` to ensure it runs on first boot.
+    - **Encoding**: Configuration file is written as **UTF-8 without BOM** to prevent parsing errors that cause service crashes.

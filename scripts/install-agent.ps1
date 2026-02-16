@@ -29,6 +29,16 @@ if ($process.ExitCode -ne 0) {
     exit $process.ExitCode
 }
 
+# Enforce Service Startup Type
+Write-Host "Enforcing Cloudbase-Init service startup type..."
+# The service name is usually "cloudbase-init"
+if (Get-Service "cloudbase-init" -ErrorAction SilentlyContinue) {
+    Set-Service -Name "cloudbase-init" -StartupType Automatic
+    Write-Host "Service 'cloudbase-init' set to Automatic start."
+} else {
+    Write-Warning "Service 'cloudbase-init' not found immediately after install."
+}
+
 $installPath = "C:\Program Files\Cloudbase Solutions\Cloudbase-Init"
 if (-not (Test-Path "$installPath\conf\cloudbase-init.conf")) {
     Write-Error "Installation path not found: $installPath\conf\cloudbase-init.conf"
@@ -51,6 +61,7 @@ debug=true
 log_dir=C:\Program Files\Cloudbase Solutions\Cloudbase-Init\log\
 log_file=cloudbase-init.log
 default_log_levels=comtypes=INFO,suds=INFO,iso8601=WARN,requests=WARN
+logging_serial_port_settings=
 mtu_use_dhcp_config=true
 ntp_use_dhcp_config=true
 local_scripts_path=C:\Program Files\Cloudbase Solutions\Cloudbase-Init\LocalScripts\
@@ -58,9 +69,33 @@ check_latest_version=true
 
 metadata_services=cloudbaseinit.metadata.services.nocloudservice.NoCloudConfigDriveService,cloudbaseinit.metadata.services.osconfigdrive.windows.WindowsConfigDriveManager
 
-plugins=cloudbaseinit.plugins.common.mtu.MTUPlugin,cloudbaseinit.plugins.common.sethostname.SetHostNamePlugin,cloudbaseinit.plugins.windows.extendvolumes.ExtendVolumesPlugin,cloudbaseinit.plugins.common.userdata.UserDataPlugin,cloudbaseinit.plugins.windows.createuser.CreateUserPlugin
+plugins=cloudbaseinit.plugins.common.mtu.MTUPlugin,cloudbaseinit.plugins.common.sethostname.SetHostNamePlugin,cloudbaseinit.plugins.windows.extendvolumes.ExtendVolumesPlugin,cloudbaseinit.plugins.common.userdata.UserDataPlugin,cloudbaseinit.plugins.windows.createuser.CreateUserPlugin,cloudbaseinit.plugins.windows.setuserpassword.SetUserPasswordPlugin,cloudbaseinit.plugins.common.localscripts.LocalScriptsPlugin
+
+retry_count=10
+retry_count_interval=5
+allow_reboot=true
+stop_service_on_exit=false
+
+[config_drive]
+raw_hdd=true
+cdrom=true
+vfat=true
 "@
 
-$confContent | Set-Content $confFile -Encoding UTF8
+# Ensure CRLF line endings
+$confContent = $confContent -replace "(?<!\r)\n", "`r`n"
 
-Write-Host "Cloudbase-Init Installed and Configured."
+# Write file without BOM using .NET classes
+$Utf8NoBom = New-Object System.Text.UTF8Encoding $False
+[System.IO.File]::WriteAllText($confFile, $confContent, $Utf8NoBom)
+
+# Verify Service Status at the end
+$service = Get-Service "cloudbase-init" -ErrorAction SilentlyContinue
+if ($service) {
+    Write-Host "Cloudbase-Init Service Status: $($service.Status)"
+    Write-Host "Cloudbase-Init Service StartType: $($service.StartType)"
+} else {
+    Write-Warning "Could not retrieve Cloudbase-Init service status at end of script."
+}
+
+Write-Host "Cloudbase-Init Installed and Configured (without BOM)."

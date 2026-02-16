@@ -13,7 +13,7 @@ chmod 666 ./OVMF_VARS.fd
 # Run Packer in background
 # Use -on-error=abort to keep artifacts on failure
 echo "Starting Packer..."
-env PACKER_LOG=1 packer build -on-error=abort windows11-qemu.pkr.hcl > packer.log 2>&1 &
+env PACKER_LOG=1 packer build -force -on-error=abort windows11-qemu.pkr.hcl > packer.log 2>&1 &
 PACKER_PID=$!
 
 echo "Packer started with PID $PACKER_PID. Monitoring logs..."
